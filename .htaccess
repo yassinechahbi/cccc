@@ -6,6 +6,6 @@
 </IfModule>
 
 # Safety net if mod_rewrite were ever disabled.
-<FilesMatch "^\.|\.(env|log|sql|txt|lock|json|xml|md|yml|yaml)$">
+<FilesMatch "^\.|\.(env|log|sql|lock|md|yml|yaml)$|^(composer|package)(-lock)?\.json$">
     Require all denied
 </FilesMatch>

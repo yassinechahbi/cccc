@@ -21,6 +21,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('circuits/{circuit:number}/pdf', CircuitPdfController::class)->name('circuits.pdf');
 
     Volt::route('members', 'members.index')->middleware('can:manage-circuits')->name('members.index');
+
+    // Every member edits their own record; an admin can edit anyone's.
+    Volt::route('profile', 'members.profile')->name('profile');
+    Volt::route('members/{member:member_number}/edit', 'members.profile')->middleware('can:admin')->name('members.edit');
+
+    Volt::route('admin/users', 'admin.users')->middleware('can:admin')->name('admin.users');
 });
 
 Route::middleware(['auth'])->group(function () {

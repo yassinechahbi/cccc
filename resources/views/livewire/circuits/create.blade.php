@@ -30,7 +30,8 @@ new #[Title('New circuit')] class extends Component {
     public function mount(): void
     {
         $user = auth()->user();
-        $this->omId = $user->member?->is_om ? $user->member_id : null;
+        // An OM originates their own circuits; only an admin chooses another OM.
+        $this->omId = $user->isOm() ? $user->member_id : null;
         $this->size = config('cccc.default_members');
         $this->mailedAt = now()->toDateString();
     }
@@ -47,6 +48,10 @@ new #[Title('New circuit')] class extends Component {
         }
 
         if ($property === 'omId') {
+            if (! auth()->user()->isAdmin()) {
+                $this->omId = auth()->user()->member_id;
+            }
+
             $this->selected = array_values(array_diff($this->selected, [(int) $this->omId]));
         }
     }
@@ -85,7 +90,7 @@ new #[Title('New circuit')] class extends Component {
         ]);
 
         $om = Member::findOrFail($this->omId);
-        abort_unless(auth()->user()->is_admin || $om->id === auth()->user()->member_id, 403);
+        abort_unless(auth()->user()->isAdmin() || (auth()->user()->isOm() && $om->id === auth()->user()->member_id), 403);
 
         $circuit = Circuit::launch($om, $this->selected, $this->mailedAt, $this->message ?: null, auth()->user());
 
@@ -109,7 +114,7 @@ new #[Title('New circuit')] class extends Component {
     #[Computed]
     public function chosen()
     {
-        $members = Member::with('country')->findMany($this->selected)->keyBy('id');
+        $members = Member::with('country', 'upcomingAbsences')->findMany($this->selected)->keyBy('id');
 
         return collect($this->selected)->map(fn ($id) => $members[$id])->filter();
     }
@@ -119,7 +124,7 @@ new #[Title('New circuit')] class extends Component {
         $omId = $this->omId;
 
         $candidates = Member::query()
-            ->with('country')
+            ->with('country', 'upcomingAbsences')
             ->search($this->search)
             ->when($this->countryId, fn (Builder $q) => $q->where('country_id', $this->countryId))
             ->when($this->activeOnly, fn (Builder $q) => $q->active())
@@ -148,13 +153,18 @@ new #[Title('New circuit')] class extends Component {
     <div class="grid gap-6 lg:grid-cols-5">
         {{-- Left: settings and route --}}
         <form method="post" wire:submit="create" class="space-y-5 lg:col-span-2">
-            @if (auth()->user()->is_admin)
+            @if (auth()->user()->isAdmin())
                 <flux:select wire:model.live="omId" :label="__('Originating Member')">
                     <flux:select.option value="">{{ __('Choose...') }}</flux:select.option>
                     @foreach ($this->oms as $om)
                         <flux:select.option :value="$om->id">{{ $om->name }} @if ($om->om_code) ("{{ $om->om_code }}") @endif #{{ $om->member_number }}</flux:select.option>
                     @endforeach
                 </flux:select>
+            @else
+                <flux:text>
+                    {{ __('Originating Member') }}: <strong>{{ auth()->user()->member->displayName() }}</strong>
+                    &mdash; {{ __('the circuit comes back to you.') }}
+                </flux:text>
             @endif
 
             <div class="grid grid-cols-2 gap-4">
@@ -175,6 +185,7 @@ new #[Title('New circuit')] class extends Component {
                                 @if ($member->status !== MemberStatus::Active)
                                     <flux:badge size="sm" :color="$member->status->color()">{{ $member->status->label() }}</flux:badge>
                                 @endif
+                                <x-absence-badge :member="$member" />
                             </div>
                             <flux:button size="xs" variant="ghost" icon="chevron-up" wire:click="move({{ $index }}, -1)" :disabled="$index === 0" aria-label="{{ __('Move up') }}" />
                             <flux:button size="xs" variant="ghost" icon="chevron-down" wire:click="move({{ $index }}, 1)" :disabled="$index === count($selected) - 1" aria-label="{{ __('Move down') }}" />
@@ -232,6 +243,7 @@ new #[Title('New circuit')] class extends Component {
                                 @if ($member->status !== MemberStatus::Active)
                                     <flux:badge size="sm" :color="$member->status->color()">{{ $member->status->label() }}</flux:badge>
                                 @endif
+                                <x-absence-badge :member="$member" />
                                 @if ($member->pending_count)
                                     <flux:badge size="sm" color="blue">{{ trans_choice(':count circuit on its way|:count circuits on their way', $member->pending_count) }}</flux:badge>
                                 @endif

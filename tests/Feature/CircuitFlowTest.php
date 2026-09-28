@@ -23,7 +23,7 @@ class CircuitFlowTest extends TestCase
 
     private function omUser(): User
     {
-        return User::factory()->create(['member_id' => Member::factory()->om('HAE')->create()->id]);
+        return User::factory()->om()->create();
     }
 
     private function launch(User $om, array $memberIds, ?string $mailedAt = null): Circuit
@@ -210,6 +210,7 @@ class CircuitFlowTest extends TestCase
         $stranger = User::factory()->create(['member_id' => Member::factory()->create()->id]);
 
         $this->actingAs($participant)->get(route('circuits.show', $circuit))->assertOk();
+        $this->actingAs($participant)->get(route('circuits.pdf', $circuit))->assertForbidden(); // printing is the OM's job
         $this->actingAs($stranger)->get(route('circuits.show', $circuit))->assertForbidden();
         $this->actingAs($stranger)->get(route('circuits.pdf', $circuit))->assertForbidden();
     }

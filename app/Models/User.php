@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
+use App\Enums\Role;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\Casts\AsEnumCollection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -45,7 +47,7 @@ class User extends Authenticatable implements MustVerifyEmail
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
-            'is_admin' => 'boolean',
+            'roles' => AsEnumCollection::of(Role::class),
         ];
     }
 
@@ -54,24 +56,72 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->belongsTo(Member::class);
     }
 
-    /** Once the e-mail address is proven, attach the member record carrying that address. */
+    /**
+     * Once the e-mail address is proven, attach the member record carrying that address.
+     * Only when it is unambiguous: some addresses are shared by several members.
+     */
     public function linkMemberByEmail(): void
     {
         if ($this->member_id || ! $this->hasVerifiedEmail()) {
             return;
         }
 
-        $member = Member::where('email', Str::lower($this->email))->whereDoesntHave('user')->first();
+        $candidates = Member::where('email', Str::lower($this->email))->whereDoesntHave('user')->get();
 
-        if ($member) {
-            $this->member()->associate($member)->save();
+        if ($candidates->count() === 1) {
+            $this->linkMember($candidates->first());
         }
+    }
+
+    /** Attach (or detach, with null) a member record; an OM member makes the account an OM. */
+    public function linkMember(?Member $member): void
+    {
+        $this->member()->associate($member)->save();
+
+        $roles = ($this->roles ?? collect())->reject(fn (Role $r) => $r === Role::OriginatingMember);
+        $this->syncRoles($member?->is_om ? $roles->push(Role::OriginatingMember) : $roles);
+    }
+
+    /**
+     * Replace the account's roles. The OM role needs a member record (the circuits' return
+     * address) and is mirrored on it, so the directory and the circuit forms stay in step.
+     *
+     * @param  iterable<Role>  $roles
+     */
+    public function syncRoles(iterable $roles): void
+    {
+        $roles = collect($roles)->unique()->values();
+
+        if (! $this->member_id) {
+            $roles = $roles->reject(fn (Role $r) => $r === Role::OriginatingMember)->values();
+        }
+
+        $this->roles = $roles;
+        $this->save();
+
+        $this->member?->update(['is_om' => $roles->contains(Role::OriginatingMember)]);
+    }
+
+    public function hasRole(Role $role): bool
+    {
+        return (bool) $this->roles?->contains($role);
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->hasRole(Role::Admin);
+    }
+
+    /** An Originating Member account, linked to its member record. */
+    public function isOm(): bool
+    {
+        return $this->hasRole(Role::OriginatingMember) && $this->member_id !== null;
     }
 
     /** Originating Members and administrators can create circuits. */
     public function canManageCircuits(): bool
     {
-        return $this->is_admin || (bool) $this->member?->is_om;
+        return $this->isAdmin() || $this->isOm();
     }
 
     /**

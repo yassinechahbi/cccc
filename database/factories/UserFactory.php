@@ -2,6 +2,8 @@
 
 namespace Database\Factories;
 
+use App\Enums\Role;
+use App\Models\Member;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -30,6 +32,26 @@ class UserFactory extends Factory
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
         ];
+    }
+
+    public function admin(): static
+    {
+        return $this->state(['roles' => [Role::Admin]]);
+    }
+
+    /** An Originating Member account, with its OM member record. */
+    public function om(string $code = 'HAE'): static
+    {
+        return $this->state(fn () => [
+            'roles' => [Role::OriginatingMember],
+            'member_id' => Member::factory()->om($code)->create()->id,
+        ]);
+    }
+
+    /** A plain member account, with its member record. */
+    public function member(): static
+    {
+        return $this->state(fn () => ['member_id' => Member::factory()->create()->id]);
     }
 
     /**

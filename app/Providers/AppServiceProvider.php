@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Models\Circuit;
+use App\Models\Member;
 use App\Models\User;
 use Illuminate\Auth\Events\Verified;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -27,10 +28,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Gate::define('admin', fn (User $user) => $user->isAdmin());
         Gate::define('manage-circuits', fn (User $user) => $user->canManageCircuits());
         Gate::define('view-circuit', fn (User $user, Circuit $circuit) => $circuit->isVisibleTo($user));
-        Gate::define('edit-circuit', fn (User $user, Circuit $circuit) => $user->is_admin
-            || ($user->member_id !== null && $user->member_id === $circuit->originating_member_id));
+        Gate::define('edit-circuit', fn (User $user, Circuit $circuit) => $circuit->isEditableBy($user));
+        // Own record, or any record for an admin.
+        Gate::define('edit-member', fn (User $user, Member $member) => $user->isAdmin() || $user->member_id === $member->id);
 
         Event::listen(Verified::class, fn (Verified $event) => $event->user->linkMemberByEmail());
 

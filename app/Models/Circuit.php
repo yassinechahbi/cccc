@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\CircuitStatus;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -51,6 +52,7 @@ class Circuit extends Model
                 'number' => $number,
                 'originating_member_id' => $om->id,
                 'created_by' => $creator?->id,
+                'status' => CircuitStatus::InProgress,
                 'mailed_at' => $mailedAt,
                 'om_message' => $message,
             ]);
@@ -81,15 +83,45 @@ class Circuit extends Model
         return $this->status === CircuitStatus::InProgress && (bool) $this->currentLeg()?->isOverdue();
     }
 
+    /**
+     * Admins see everything; an OM sees the circuits they originated; every member sees
+     * the circuits in progress they take part in.
+     */
     public function isVisibleTo(User $user): bool
     {
-        if ($user->is_admin) {
+        if ($user->isAdmin()) {
             return true;
         }
 
         return $user->member_id !== null
             && ($user->member_id === $this->originating_member_id
-                || $this->legs->contains('member_id', $user->member_id));
+                || ($this->status === CircuitStatus::InProgress && $this->legs->contains('member_id', $user->member_id)));
+    }
+
+    /** The query counterpart of isVisibleTo(). */
+    public function scopeVisibleTo(Builder $query, User $user): void
+    {
+        if ($user->isAdmin()) {
+            return;
+        }
+
+        if (! $user->member_id) {
+            $query->whereRaw('1 = 0');
+
+            return;
+        }
+
+        $query->where(fn (Builder $q) => $q
+            ->where('originating_member_id', $user->member_id)
+            ->orWhere(fn (Builder $q) => $q
+                ->where('status', CircuitStatus::InProgress)
+                ->whereHas('legs', fn (Builder $l) => $l->where('member_id', $user->member_id))));
+    }
+
+    /** The Originating Member of the circuit, or an admin. */
+    public function isEditableBy(User $user): bool
+    {
+        return $user->isAdmin() || ($user->member_id !== null && $user->member_id === $this->originating_member_id);
     }
 
     public function completeIfReturned(): void

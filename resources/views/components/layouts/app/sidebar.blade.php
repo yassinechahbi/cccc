@@ -16,12 +16,19 @@
                     <flux:navlist.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>{{ __('Dashboard') }}</flux:navlist.item>
                     <flux:navlist.item icon="envelope" :href="route('circuits.index')" :current="request()->routeIs('circuits.index', 'circuits.show')" wire:navigate>{{ __('Circuits') }}</flux:navlist.item>
                     <flux:navlist.item icon="qr-code" :href="route('track')" :current="request()->routeIs('track*')" wire:navigate>{{ __('Confirm a circuit') }}</flux:navlist.item>
+                    <flux:navlist.item icon="user-circle" :href="route('profile')" :current="request()->routeIs('profile')" wire:navigate>{{ __('My profile') }}</flux:navlist.item>
                 </flux:navlist.group>
 
                 @can('manage-circuits')
                     <flux:navlist.group :heading="__('Originating Members')" class="grid">
                         <flux:navlist.item icon="plus-circle" :href="route('circuits.create')" :current="request()->routeIs('circuits.create')" wire:navigate>{{ __('New circuit') }}</flux:navlist.item>
-                        <flux:navlist.item icon="users" :href="route('members.index')" :current="request()->routeIs('members.index')" wire:navigate>{{ __('Members') }}</flux:navlist.item>
+                        <flux:navlist.item icon="users" :href="route('members.index')" :current="request()->routeIs('members.*')" wire:navigate>{{ __('Members') }}</flux:navlist.item>
+                    </flux:navlist.group>
+                @endcan
+
+                @can('admin')
+                    <flux:navlist.group :heading="__('Administration')" class="grid">
+                        <flux:navlist.item icon="shield-check" :href="route('admin.users')" :current="request()->routeIs('admin.users')" wire:navigate>{{ __('Users & roles') }}</flux:navlist.item>
                     </flux:navlist.group>
                 @endcan
             </flux:navlist>

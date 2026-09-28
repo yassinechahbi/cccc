@@ -14,7 +14,7 @@ class CircuitPdfController extends Controller
     /** Printable circuit form (front + backside), sent by the OM with the first cover. */
     public function __invoke(Request $request, Circuit $circuit): Response
     {
-        Gate::authorize('view-circuit', $circuit);
+        Gate::authorize('edit-circuit', $circuit); // printing is the OM's job
 
         $paper = $request->query('paper') === 'letter' ? 'letter' : 'a4';
 

@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\MemberStatus;
+use App\Enums\Role;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -19,7 +20,8 @@ class Member extends Model
 
     protected $fillable = [
         'member_number', 'name', 'title', 'is_om', 'om_code', 'address', 'city', 'country_id',
-        'email', 'interest_countries', 'interest_themes', 'status', 'remarks',
+        'email', 'phone', 'interest_countries', 'interest_themes', 'cover_preferences',
+        'philatelic_references', 'status', 'remarks',
     ];
 
     protected function casts(): array
@@ -48,6 +50,36 @@ class Member extends Model
     public function originatedCircuits(): HasMany
     {
         return $this->hasMany(Circuit::class, 'originating_member_id');
+    }
+
+    public function absences(): HasMany
+    {
+        return $this->hasMany(MemberAbsence::class)->orderBy('starts_on');
+    }
+
+    /** Absences not over yet, soonest first. */
+    public function upcomingAbsences(): HasMany
+    {
+        return $this->absences()->whereDate('ends_on', '>=', now()->toDateString());
+    }
+
+    /** The first absence overlapping the next $days days, if any (uses loaded upcomingAbsences). */
+    public function absenceWithin(int $days = 60): ?MemberAbsence
+    {
+        $horizon = now()->addDays($days)->endOfDay();
+
+        return $this->upcomingAbsences->first(fn (MemberAbsence $a) => $a->starts_on->lte($horizon));
+    }
+
+    /** Grant or withdraw the Originating Member function, keeping the linked account's role in step. */
+    public function setOriginatingMember(bool $isOm, ?string $code = null): void
+    {
+        $this->update(['is_om' => $isOm, 'om_code' => $code]);
+
+        if ($user = $this->user) {
+            $roles = ($user->roles ?? collect())->reject(fn (Role $r) => $r === Role::OriginatingMember);
+            $user->syncRoles($isOm ? $roles->push(Role::OriginatingMember) : $roles);
+        }
     }
 
     /** Name with club function, e.g. OM "HAE" Kimmo Liljeroos or MD-10 "EI" Holger Kaufhold. */

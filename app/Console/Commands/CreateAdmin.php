@@ -2,6 +2,7 @@
 
 namespace App\Console\Commands;
 
+use App\Enums\Role;
 use App\Models\Member;
 use App\Models\User;
 use Illuminate\Console\Command;
@@ -33,9 +34,10 @@ class CreateAdmin extends Command
         $user->name = $this->argument('name');
         $user->password = $this->option('password') ?? ($user->exists ? $user->password : password('Password', required: true));
         $user->email_verified_at ??= now();
-        $user->is_admin = true;
-        $user->member()->associate($member ?? $user->member);
         $user->save();
+
+        $user->linkMember($member ?? $user->member); // also grants the OM role to an OM member
+        $user->syncRoles($user->roles->push(Role::Admin));
 
         $this->info("Administrator {$user->email} ready".($member ? " (member #{$member->member_number})." : '.'));
 

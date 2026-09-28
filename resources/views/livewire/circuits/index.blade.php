@@ -28,11 +28,9 @@ new #[Title('Circuits')] class extends Component {
 
         $circuits = Circuit::query()
             ->with('originatingMember', 'legs.member.country')
-            // Members see the circuits they take part in; admins see everything.
-            ->unless($user->is_admin, fn (Builder $q) => $q->where(fn (Builder $q) => $q
-                ->where('originating_member_id', $user->member_id)
-                ->orWhereHas('legs', fn (Builder $l) => $l->where('member_id', $user->member_id))))
-            ->when($this->status !== '', fn (Builder $q) => $q->where('status', $this->status))
+            ->visibleTo($user)
+            // Plain members only ever see circuits in progress: no status filter for them.
+            ->when($user->canManageCircuits() && $this->status !== '', fn (Builder $q) => $q->where('status', $this->status))
             ->when($this->search !== '', fn (Builder $q) => $q->where(fn (Builder $q) => $q
                 ->where('number', (int) $this->search)
                 ->orWhereHas('legs.member', fn (Builder $m) => $m->search($this->search))))
@@ -54,13 +52,18 @@ new #[Title('Circuits')] class extends Component {
 
     <div class="grid gap-3 sm:grid-cols-3">
         <flux:input wire:model.live.debounce.300ms="search" icon="magnifying-glass" :placeholder="__('Circuit # or member')" class="sm:col-span-2" />
-        <flux:select wire:model.live="status">
-            <flux:select.option value="">{{ __('All statuses') }}</flux:select.option>
-            @foreach (CircuitStatus::cases() as $case)
-                <flux:select.option :value="$case->value">{{ $case->label() }}</flux:select.option>
-            @endforeach
-        </flux:select>
+        @can('manage-circuits')
+            <flux:select wire:model.live="status">
+                <flux:select.option value="">{{ __('All statuses') }}</flux:select.option>
+                @foreach (CircuitStatus::cases() as $case)
+                    <flux:select.option :value="$case->value">{{ $case->label() }}</flux:select.option>
+                @endforeach
+            </flux:select>
+        @endcan
     </div>
+    @cannot('manage-circuits')
+        <flux:text>{{ __('The circuits in progress you take part in.') }}</flux:text>
+    @endcannot
 
     <div class="overflow-x-auto rounded-xl border border-zinc-200 dark:border-zinc-700">
         <table class="w-full text-left text-sm">

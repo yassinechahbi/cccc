@@ -40,7 +40,7 @@ new #[Title('Members')] class extends Component {
     {
         return [
             'members' => Member::query()
-                ->with('country')
+                ->with('country', 'upcomingAbsences')
                 ->search($this->search)
                 ->when($this->country !== '', fn (Builder $q) => $q->where('country_id', $this->country))
                 ->when($this->status !== '', fn (Builder $q) => $q->where('status', $this->status))
@@ -92,6 +92,10 @@ new #[Title('Members')] class extends Component {
                         <td class="px-4 py-3">
                             <div class="font-medium">{{ $member->displayName() }}</div>
                             @if ($member->email)<div class="text-xs text-zinc-500">{{ $member->email }}</div>@endif
+                            @if ($member->phone)<div class="text-xs text-zinc-500">{{ $member->phone }}</div>@endif
+                            @can('admin')
+                                <flux:link class="text-xs" :href="route('members.edit', $member)" wire:navigate>{{ __('Edit') }}</flux:link>
+                            @endcan
                         </td>
                         <td class="px-4 py-3">
                             @foreach ($member->postalLines() as $line)<div>{{ $line }}</div>@endforeach
@@ -99,9 +103,11 @@ new #[Title('Members')] class extends Component {
                         <td class="max-w-xs px-4 py-3 text-xs text-zinc-600 dark:text-zinc-400">
                             @if ($member->interest_countries)<div><span class="font-medium">{{ __('Countries') }}:</span> {{ $member->interest_countries }}</div>@endif
                             @if ($member->interest_themes)<div><span class="font-medium">{{ __('Themes') }}:</span> {{ $member->interest_themes }}</div>@endif
+                            @if ($member->cover_preferences)<div><span class="font-medium">{{ __('Wishes') }}:</span> {{ $member->cover_preferences }}</div>@endif
                         </td>
                         <td class="px-4 py-3">
                             <flux:badge size="sm" :color="$member->status->color()">{{ $member->status->label() }}</flux:badge>
+                            <x-absence-badge :member="$member" />
                             @if ($member->remarks)<div class="mt-1 text-xs text-zinc-500">{{ $member->remarks }}</div>@endif
                         </td>
                     </tr>

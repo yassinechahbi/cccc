@@ -104,7 +104,7 @@ new class extends Component {
 
     private function circuit(): Circuit
     {
-        return Circuit::with('legs.member.country', 'legs.recorder', 'originatingMember.country', 'creator')->findOrFail($this->circuitId);
+        return Circuit::with('legs.member.country', 'legs.member.upcomingAbsences', 'legs.recorder', 'originatingMember.country', 'creator')->findOrFail($this->circuitId);
     }
 
     private function editableLeg(?int $legId): CircuitLeg
@@ -138,8 +138,10 @@ new class extends Component {
         </div>
 
         <div class="flex flex-wrap gap-2">
-            <flux:button icon="printer" :href="route('circuits.pdf', [$circuit, 'paper' => 'a4'])" target="_blank">{{ __('PDF (A4)') }}</flux:button>
-            <flux:button icon="printer" :href="route('circuits.pdf', [$circuit, 'paper' => 'letter'])" target="_blank">{{ __('PDF (US Letter)') }}</flux:button>
+            @if ($canEdit)
+                <flux:button icon="printer" :href="route('circuits.pdf', [$circuit, 'paper' => 'a4'])" target="_blank">{{ __('PDF (A4)') }}</flux:button>
+                <flux:button icon="printer" :href="route('circuits.pdf', [$circuit, 'paper' => 'letter'])" target="_blank">{{ __('PDF (US Letter)') }}</flux:button>
+            @endif
             @if ($canEdit && $circuit->status === CircuitStatus::InProgress)
                 <flux:dropdown>
                     <flux:button icon="ellipsis-horizontal" aria-label="{{ __('More') }}" />
@@ -204,6 +206,9 @@ new class extends Component {
                                 @else
                                     <span>{{ __('Waiting') }}</span>
                                 @endif
+                                @unless ($leg->received_at)
+                                    <x-absence-badge :member="$leg->member" />
+                                @endunless
                             </div>
 
                             @if ($leg->comment)

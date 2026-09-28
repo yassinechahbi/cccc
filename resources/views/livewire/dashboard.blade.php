@@ -29,7 +29,7 @@ new #[Title('Dashboard')] class extends Component {
                 ? Circuit::with('legs.member.country')->where('originating_member_id', $memberId)
                     ->where('status', CircuitStatus::InProgress)->latest('mailed_at')->get()
                 : collect(),
-            'stats' => $user->is_admin ? [
+            'stats' => $user->isAdmin() ? [
                 __('Circuits in progress') => Circuit::where('status', CircuitStatus::InProgress)->count(),
                 __('Completed this year') => Circuit::where('status', CircuitStatus::Completed)->whereYear('completed_at', now()->year)->count(),
                 __('Active members') => \App\Models\Member::active()->count(),

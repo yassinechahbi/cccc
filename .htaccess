@@ -1,0 +1,11 @@
+# Hostinger Git deployment puts the whole project in the web root.
+# Serve everything from public/ so .env, storage/, vendor/... are never reachable.
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
+
+# Safety net if mod_rewrite were ever disabled.
+<FilesMatch "^\.|\.(env|log|sql|txt|lock|json|xml|md|yml|yaml)$">
+    Require all denied
+</FilesMatch>

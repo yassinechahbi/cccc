@@ -13,10 +13,7 @@
                 @endguest
             </div>
         </div>
-        <div class="grid grid-cols-2 gap-3">
-            <img src="{{ asset('images/cover-example-1.jpg') }}" alt="{{ __('Example of a circuit cover') }}" class="rounded-lg shadow-md">
-            <img src="{{ asset('images/cover-example-2.jpg') }}" alt="{{ __('Example of a circuit cover') }}" class="mt-8 rounded-lg shadow-md">
-        </div>
+        <x-cover-rotator />
     </section>
 
     <section class="mt-12 grid gap-4 md:grid-cols-3">

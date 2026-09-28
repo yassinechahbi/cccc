@@ -1,6 +1,6 @@
 /.phpunit.cache
 /node_modules
-/public/build
+# /public/build is committed: shared hosting has no Node.js to build assets
 /public/hot
 /public/storage
 /storage/*.key

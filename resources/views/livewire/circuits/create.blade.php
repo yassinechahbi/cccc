@@ -147,7 +147,7 @@ new #[Title('New circuit')] class extends Component {
 
     <div class="grid gap-6 lg:grid-cols-5">
         {{-- Left: settings and route --}}
-        <form wire:submit="create" class="space-y-5 lg:col-span-2">
+        <form method="post" wire:submit="create" class="space-y-5 lg:col-span-2">
             @if (auth()->user()->is_admin)
                 <flux:select wire:model.live="omId" :label="__('Originating Member')">
                     <flux:select.option value="">{{ __('Choose...') }}</flux:select.option>

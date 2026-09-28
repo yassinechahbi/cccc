@@ -224,7 +224,7 @@ new class extends Component {
                     </div>
 
                     @if ($editingLegId === $leg->id)
-                        <form wire:submit="save" class="mt-4 grid gap-4 border-t border-zinc-200 pt-4 sm:grid-cols-2 dark:border-zinc-700">
+                        <form method="post" wire:submit="save" class="mt-4 grid gap-4 border-t border-zinc-200 pt-4 sm:grid-cols-2 dark:border-zinc-700">
                             <flux:input type="date" wire:model="receivedAt" :label="__('Date received')" />
                             @unless ($leg->is_return)
                                 <flux:input type="date" wire:model="mailedAt" :label="__('Date mailed')" />

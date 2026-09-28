@@ -46,7 +46,7 @@ new #[Layout('components.layouts.public')] #[Title('Confirm a circuit')] class e
         </flux:subheading>
     </div>
 
-    <form wire:submit="find" class="space-y-4 rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-800">
+    <form method="post" wire:submit="find" class="space-y-4 rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-800">
         <flux:input
             wire:model="reference"
             :label="__('Your code')"

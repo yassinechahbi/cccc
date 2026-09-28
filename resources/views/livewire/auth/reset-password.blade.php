@@ -74,7 +74,7 @@ new #[Layout('components.layouts.auth')] class extends Component {
     <!-- Session Status -->
     <x-auth-session-status class="text-center" :status="session('status')" />
 
-    <form wire:submit="resetPassword" class="flex flex-col gap-6">
+    <form method="post" wire:submit="resetPassword" class="flex flex-col gap-6">
         <!-- Email Address -->
         <div class="grid gap-2">
             <flux:input wire:model="email" id="email" label="{{ __('Email') }}" type="email" name="email" required autocomplete="email" />

@@ -103,7 +103,7 @@ new #[Layout('components.layouts.public')] class extends Component {
 
     @elseif (! $leg->received_at)
         {{-- Step 1: reception --}}
-        <form wire:submit="recordReception" class="space-y-6 rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-800">
+        <form method="post" wire:submit="recordReception" class="space-y-6 rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-800">
             <flux:heading size="lg">{{ __('I have received the cover') }}</flux:heading>
 
             <flux:input type="date" wire:model="receivedAt" :label="__('Date received')" max="{{ now()->toDateString() }}" required />
@@ -135,7 +135,7 @@ new #[Layout('components.layouts.public')] class extends Component {
             :heading="__('Reception recorded on :date. Thank you!', ['date' => $leg->received_at->format('Y-m-d')])" />
 
         @php($next = $leg->next())
-        <form wire:submit="recordMailing" class="space-y-6 rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-800">
+        <form method="post" wire:submit="recordMailing" class="space-y-6 rounded-xl border border-zinc-200 bg-white p-6 dark:border-zinc-700 dark:bg-zinc-800">
             <div>
                 <flux:heading size="lg">{{ __('I have mailed the circuit on') }}</flux:heading>
                 <flux:text class="mt-1">

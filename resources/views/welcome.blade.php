@@ -1,6 +1,7 @@
 <x-layouts.public :wide="true">
     <section class="grid items-center gap-10 py-6 md:grid-cols-2">
         <div class="space-y-5">
+            <img src="{{ asset('images/cccc-logo.png') }}" alt="{{ config('app.name') }}" class="size-28">
             <flux:heading size="xl" level="1" class="!text-4xl">{{ __('Real covers, from real mailboxes, all around the world.') }}</flux:heading>
             <flux:text class="text-base">
                 {{ __('The Cover Collectors Circuit Club has linked stamp and cover collectors since 1947. Join a circuit: you receive a cover from another member, keep it, and send a nice cover of your own to the next member on the list.') }}

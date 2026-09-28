@@ -13,6 +13,8 @@
         .small { font-size: 7pt; }
         .title td { font-size: 12pt; font-weight: bold; }
         .title .sub { font-size: 10pt; }
+        .title .logo { width: 15mm; padding: 1mm; text-align: center; vertical-align: middle; }
+        .title .logo img { width: 13mm; height: 13mm; }
         .leg { margin-top: 4pt; page-break-inside: avoid; }
         .leg .head { font-weight: bold; border-bottom: 0.6pt solid #333; padding-bottom: 2pt; margin-bottom: 2pt; }
         .leg .country { font-weight: bold; }
@@ -37,6 +39,7 @@
     {{-- FRONT --}}
     <table class="title">
         <tr>
+            <td rowspan="2" class="logo"><img src="{{ public_path('images/cccc-logo.png') }}" alt=""></td>
             <td colspan="2">{{ __('Cover Collectors Circuit Club') }} &mdash; {{ __('Circuit #:number', ['number' => $circuit->number]) }}</td>
         </tr>
         <tr>
